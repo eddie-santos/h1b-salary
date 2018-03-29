@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from pandas.errors import ParserError
 from sqlalchemy import create_engine
 from sqlalchemy.types import BOOLEAN, FLOAT, INTEGER, TEXT, TIMESTAMP
 
@@ -170,6 +171,10 @@ dtype = {
         'python': 'object',
         'sqlalchemy': TEXT
     },
+    'source_file': {
+        'python': 'object',
+        'sqlalchemy': TEXT
+    },
     'support_h1b': {
         'python': 'bool',
         'sqlalchemy': BOOLEAN
@@ -217,7 +222,11 @@ dtype = {
 }
 
 bool_cols = [k for k, v in dtype.items() if v['python'] == 'bool']
-file_dir = '/Users/Eddie/projects/adhoc/h1b/data/'
+file_dir = '/Users/Eddie/projects/h1b-salary/data/'
+
+def parse_date(date):
+    month, day, year = date.split('/')
+    return year + '-' + month + '-' + day
 
 if __name__ == '__main__':
     engine = create_engine(db_url)
@@ -229,6 +238,7 @@ if __name__ == '__main__':
         df = pd.read_excel(file_dir + file)
         print('file loaded, processing')
         df.columns = df.columns.map(lambda x: x.lower().replace('-',''))
+        df['source_file'] = [file.split('.')[0]]*df.shape[0]
         db_cols = list(dtype.keys())
 
         if 'naic_code' in df:
@@ -240,8 +250,13 @@ if __name__ == '__main__':
                 df[col] = [None]*df.shape[0]
             if col in bool_cols:
                 df[col] = df[col].apply(lambda x: True if x in (1, 'Y', True) else False)
-            df[col] = df[col].astype(dtype[col]['python'])
-        df['source_file'] = [file.split('.')[0]]*df.shape[0]
+
+            try:
+                df[col] = df[col].astype(dtype[col]['python'])
+            except ParserError:
+                if dtype[col] == 'datetime64[ns]':
+                    df[col] = df[col].apply(parse_date)
+                df[col] = df[col].astype(dtype[col]['python'])
 
         print('writing to database')
         df[db_cols].to_sql('h1b_salary', engine, if_exists='append', index=False, chunksize=5000, dtype={k:v['sqlalchemy'] for k, v in dtype.items()})
