@@ -230,7 +230,7 @@ def parse_date(date):
 if __name__ == '__main__':
     engine = create_engine(db_url)
     
-    files = ['h1b_2018.xlsx', 'h1b_2017.xlsx', 'h1b_2016.xlsx', 'h1b_2015.xlsx', 'h1b_2014.xlsx']
+    files = ['h1b_2018.xlsx', 'h1b_2017.xlsx', 'h1b_2016.xlsx']
     
     for file in files:
         print('Loading file: {}'.format(file))
@@ -251,12 +251,7 @@ if __name__ == '__main__':
             if col in bool_cols:
                 df[col] = df[col].apply(lambda x: True if x in (1, 'Y', True) else False)
 
-            try:
-                df[col] = df[col].astype(dtype[col]['python'])
-            except ValueError:
-                if dtype[col]['python'] == 'datetime64[ns]':
-                    df[col] = df[col].apply(parse_date)
-                df[col] = df[col].astype(dtype[col]['python'])
+            df[col] = df[col].astype(dtype[col]['python'])
 
         print('Writing to database.')
         df[db_cols].to_sql('h1b_salary', engine, if_exists='append', index=False, chunksize=5000, dtype={k:v['sqlalchemy'] for k, v in dtype.items()})
