@@ -236,6 +236,7 @@ if __name__ == '__main__':
         print('Loading file: {}'.format(file))
         df = pd.read_excel(file_dir + file)
         n_rows, n_cols = df.shape
+        
         print('File: {} rows, {} cols. Processing.'.format(n_rows, n_cols))
         df.columns = df.columns.map(lambda x: x.lower().replace('-',''))
         df['source_file'] = [file.split('.')[0]]*n_rows
