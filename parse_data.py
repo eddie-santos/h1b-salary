@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-from pandas.errors import ParserError
 from sqlalchemy import create_engine
 from sqlalchemy.types import BOOLEAN, FLOAT, INTEGER, TEXT, TIMESTAMP
 
@@ -253,7 +252,7 @@ if __name__ == '__main__':
 
             try:
                 df[col] = df[col].astype(dtype[col]['python'])
-            except ParserError:
+            except ValueError:
                 if dtype[col] == 'datetime64[ns]':
                     df[col] = df[col].apply(parse_date)
                 df[col] = df[col].astype(dtype[col]['python'])
