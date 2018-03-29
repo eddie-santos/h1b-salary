@@ -230,14 +230,15 @@ def parse_date(date):
 if __name__ == '__main__':
     engine = create_engine(db_url)
     
-    files = ['h1b_2018.xlsx', 'h1b_2017.xlsx', 'h1b_2016.xlsx', 'h1b_2015.xlsx']
+    files = ['h1b_2018.xlsx', 'h1b_2017.xlsx', 'h1b_2016.xlsx', 'h1b_2015.xlsx', 'h1b_2014.xlsx']
     
     for file in files:
-        print('loading file: {}'.format(file))
+        print('Loading file: {}'.format(file))
         df = pd.read_excel(file_dir + file)
-        print('file loaded, processing')
+        n_rows, n_cols = df.shape
+        print('File: {} rows, {} cols. Processing.'.format(n_rows, n_cols))
         df.columns = df.columns.map(lambda x: x.lower().replace('-',''))
-        df['source_file'] = [file.split('.')[0]]*df.shape[0]
+        df['source_file'] = [file.split('.')[0]]*n_rows
         db_cols = list(dtype.keys())
 
         if 'naic_code' in df:
@@ -246,7 +247,7 @@ if __name__ == '__main__':
 
         for col in db_cols:
             if col not in df:
-                df[col] = [None]*df.shape[0]
+                df[col] = [None]*n_rows
             if col in bool_cols:
                 df[col] = df[col].apply(lambda x: True if x in (1, 'Y', True) else False)
 
@@ -257,6 +258,6 @@ if __name__ == '__main__':
                     df[col] = df[col].apply(parse_date)
                 df[col] = df[col].astype(dtype[col]['python'])
 
-        print('writing to database')
+        print('Writing to database.')
         df[db_cols].to_sql('h1b_salary', engine, if_exists='append', index=False, chunksize=5000, dtype={k:v['sqlalchemy'] for k, v in dtype.items()})
-        print('file {} complete!'.format(file))
+        print('Completed: {}\n'.format(file))
