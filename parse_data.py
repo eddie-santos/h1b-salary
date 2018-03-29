@@ -254,7 +254,7 @@ if __name__ == '__main__':
             try:
                 df[col] = df[col].astype(dtype[col]['python'])
             except ValueError:
-                if dtype[col] == 'datetime64[ns]':
+                if dtype[col]['python'] == 'datetime64[ns]':
                     df[col] = df[col].apply(parse_date)
                 df[col] = df[col].astype(dtype[col]['python'])
 
